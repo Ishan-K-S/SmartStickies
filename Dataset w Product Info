@@ -1,0 +1,75 @@
+import pandas as pd
+
+# Load the Excel file
+file_path = "Example Product.xlsx"
+sheet_name = "Sheet1"  # Assuming the data is in Sheet1
+
+# Read the Excel file into a DataFrame
+df = pd.read_excel(file_path, sheet_name=sheet_name)
+
+# Function to extract product information based on category or product name
+def get_product_info(category=None, product_name=None):
+    # Initialize an empty list to store results
+    results = []
+
+    # Iterate through the DataFrame to find matching rows
+    for index, row in df.iterrows():
+        # Check if the row contains a category header
+        if pd.notna(row["A"]) and "Catergory" in row["A"]:
+            current_category = row["A"].replace("Catergory", "").strip()
+        
+        # If a category is specified, only process rows within that category
+        if category and current_category != category:
+            continue
+        
+        # If a product name is specified, only process rows matching that product name
+        if product_name and product_name.lower() not in str(row["B"]).lower():
+            continue
+        
+        # Extract product details
+        if pd.notna(row["B"]) and pd.notna(row["C"]):  # Ensure product title and price are not NaN
+            product_info = {
+                "Category": current_category,
+                "Product Title": row["B"],
+                "Price": row["C"],
+                "Description": row["D"],
+                "Related Items": []
+            }
+            results.append(product_info)
+    
+    # Add related items within the same category
+    if category:
+        for result in results:
+            related_items = [
+                item["Product Title"] for item in results
+                if item["Category"] == result["Category"] and item["Product Title"] != result["Product Title"]
+            ]
+            result["Related Items"] = related_items
+    
+    return results
+
+# Function to display product information
+def display_product_info(product_info):
+    for product in product_info:
+        print(f"Category: {product['Category']}")
+        print(f"Product Title: {product['Product Title']}")
+        print(f"Price: ${product['Price']}")
+        print(f"Description: {product['Description']}")
+        if product["Related Items"]:
+            print(f"Related Items: {', '.join(product['Related Items'])}")
+        print("-" * 40)
+
+# Example usage
+if __name__ == "__main__":
+    # Prompt the user for input
+    category = input("Enter a category (e.g., Hard Goods, Cleaning products, Syrups, Services): ").strip()
+    product_name = input("Enter a product name (optional, press Enter to skip): ").strip()
+
+    # Get product information
+    product_info = get_product_info(category=category if category else None, product_name=product_name if product_name else None)
+
+    # Display the results
+    if product_info:
+        display_product_info(product_info)
+    else:
+        print("No products found matching your criteria.")
