@@ -1,0 +1,69 @@
+import os
+from groq import Groq
+
+# Initialize the Groq client with the API key
+client = Groq(
+    api_key="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"
+)
+
+# Function to fetch product data (mock example)
+def get_product_data(product_id):
+    # Replace with actual logic to fetch product data from your database or API
+    product_data = {
+        "id": product_id,
+        "image_url": "https://example.com/product-image.jpg",  # URL of the product image
+        "title": "Smartphone XYZ",
+        "price": "$799",
+        "description": "The latest smartphone offering cutting-edge features and performance. Equipped with a powerful processor, stunning OLED display, and a high-quality camera."
+    }
+    return product_data
+
+# Function to create a product description using Groq's Llama model
+def generate_product_description(product_data):
+    # Construct the message for Groq's Llama model
+    prompt = f"""
+    Generate a description of a webpage for the given produc:
+    - Product Title: {product_data['title']}
+    - Product Price: {product_data['price']}
+    - Product Description: {product_data['description']}
+
+    This webpage should be customized for the product. Describe in great detail what the webpage will look like, including what pictures, where they go, where the text goes, etc 
+    """
+
+    # Call Groq's Llama model to generate the description
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an agent that customizes a store's webpage for any specific product."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        model="llama3-8b-8192"
+    )
+
+    # Extract the generated description
+    generated_description = chat_completion.choices[0].message.content
+    return generated_description
+
+# Function to get the customized product description
+def get_customized_description(product_id):
+    # Fetch product data
+    product_data = get_product_data(product_id)
+
+    # Generate product description using Groq's Llama
+    try:
+        description = generate_product_description(product_data)
+        return description
+    except Exception as e:
+        return f"Error generating product description: {str(e)}"
+
+# Example usage:
+product_id = 123  # The ID of the product you want to generate a description for
+product_description = get_customized_description(product_id)
+
+# Print out the generated product description
+print(product_description)
