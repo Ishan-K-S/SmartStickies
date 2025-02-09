@@ -3,7 +3,7 @@ from groq import Groq
 
 # Initialize the Groq client with the API key
 client = Groq(
-    api_key="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"
+    api_key="Groq_key"
 )
 
 # Function to fetch product data (mock example)
