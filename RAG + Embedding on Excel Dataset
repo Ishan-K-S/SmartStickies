@@ -1,0 +1,104 @@
+pip install langchain transformers faiss-cpu groq
+
+import pandas as pd
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.vectorstores import FAISS
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.llms import HuggingFacePipeline
+from langchain.document_loaders import TextLoader
+import torch
+from transformers import pipeline
+import groq
+from sentence_transformers import SentenceTransformer
+import numpy as np
+import faiss
+
+# Load your custom dataset (example CSV format)
+df = pd.read_excel('Example Product.xlsx')
+
+# Load a Hugging Face text generation model (example: GPT-2)
+generator = pipeline("text-generation", model="distilgpt2")
+
+# Now use Hugging FacePipeline in LangChain
+huggingface_llm = HuggingFacePipeline(pipeline=generator)
+
+# Create a prompt template for recommendations
+recommendation_prompt = """
+You are a recommendation engine. Based on the user's query and the following item descriptions, 
+recommend 3 items that best match the user's request.
+
+User Query: {user_query}
+Items: {items_list}
+"""
+
+# Create the LangChain prompt template
+template = PromptTemplate(input_variables=["user_query", "items_list"], template=recommendation_prompt)
+
+# Initialize the LLMChain
+llm_chain = LLMChain(prompt=template, llm=huggingface_llm)
+
+# Initialize HuggingFace transformer model for embeddings
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Assume your dataset has a 'description' column
+texts = df['Description'].tolist()
+
+# Create embeddings for the dataset
+embeddings = [embedder.encode(str(text)) for text in texts]
+
+# Create a FAISS index for semantic search
+embedding_dimension = embeddings[0].shape[0]
+index = faiss.IndexFlatL2(embedding_dimension)
+index.add(np.array(embeddings))
+
+
+from transformers import AutoTokenizer, AutoModel, pipeline
+import torch
+import numpy as np
+import pandas as pd
+from sklearn.neighbors import NearestNeighbors
+
+# Initialize the tokenizer and model for sentence embeddings (using a free model)
+embedder_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+embedder_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+
+# Function to encode user query into embeddings using the new model
+def get_embedding(text):
+    inputs = embedder_tokenizer(str(text), return_tensors='pt', truncation=True, padding=True, max_length=512)
+    with torch.no_grad():
+        embeddings = embedder_model(**inputs).last_hidden_state.mean(dim=1)
+    return embeddings.squeeze().numpy()
+
+# Assuming df is your DataFrame with 'Description' column and other necessary columns
+# Create embeddings for all descriptions (this step happens once)
+descriptions = df['Description'].tolist()
+description_embeddings = np.array([get_embedding(desc) for desc in descriptions])
+
+# Create the NearestNeighbors model for similarity search
+knn = NearestNeighbors(n_neighbors=3, metric='cosine')
+knn.fit(description_embeddings)
+
+# Function to generate recommendations
+def generate_recommendations(user_query):
+    # Convert user query to embeddings
+    user_query_embedding = get_embedding(user_query).reshape(1, -1)
+
+    # Use NearestNeighbors to find the most similar items in the dataset
+    distances, indices = knn.kneighbors(user_query_embedding, n_neighbors=3)
+
+    # Retrieve the corresponding items
+    recommended_items = [df.iloc[idx]['Description'] for idx in indices[0]]
+    
+    # Retrieve the corresponding product titles for the recommended descriptions
+    recommended_titles = [df.iloc[idx]['Product Title'] for idx in indices[0]]
+
+    # Return the titles along with the descriptions for the recommendations
+    recommendation_output = "\n".join([f"Product Title: {title}\nDescription: {desc}" for title, desc in zip(recommended_titles, recommended_items)])
+
+    return recommendation_output
+
+# Example usage
+user_query = "laptop with powerful battery"
+recommendations = generate_recommendations(user_query)
+print(recommendations)
