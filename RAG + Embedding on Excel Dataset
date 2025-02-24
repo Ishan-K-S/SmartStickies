@@ -1,4 +1,4 @@
-pip install langchain transformers faiss-cpu groq
+pip install langchain transformers faiss-cpu groq langchain-community
 
 import pandas as pd
 from langchain.chains import LLMChain
