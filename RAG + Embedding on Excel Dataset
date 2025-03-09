@@ -25,11 +25,13 @@ huggingface_llm = HuggingFacePipeline(pipeline=generator)
 
 # Create a prompt template for recommendations
 recommendation_prompt = """
-You are a recommendation engine. Based on the user's query and the following item descriptions, 
-recommend 3 items that best match the user's request.
+You are a recommendation engine. Given a user's query which is a product in the dataset, recommend 3 products from said dataset that best match their needs.
+The products are described below.
 
 User Query: {user_query}
-Items: {items_list}
+Products: {items_list}
+
+Provide the top 3 products by title and a short description.  
 """
 
 # Create the LangChain prompt template
