@@ -13,6 +13,11 @@ import groq
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
+from transformers import AutoTokenizer, AutoModel, pipeline
+import torch
+import numpy as np
+import pandas as pd
+from sklearn.neighbors import NearestNeighbors
 
 # Load your custom dataset (example CSV format)
 df = pd.read_excel('Example Product.xlsx')
@@ -53,13 +58,6 @@ embeddings = [embedder.encode(str(text)) for text in texts]
 embedding_dimension = embeddings[0].shape[0]
 index = faiss.IndexFlatL2(embedding_dimension)
 index.add(np.array(embeddings))
-
-
-from transformers import AutoTokenizer, AutoModel, pipeline
-import torch
-import numpy as np
-import pandas as pd
-from sklearn.neighbors import NearestNeighbors
 
 # Initialize the tokenizer and model for sentence embeddings (using a free model)
 embedder_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
