@@ -1,5 +1,5 @@
 pip install openpyxl openai requests pillow
-export OPENAI_API_KEY="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"
+export OPENAI_API_KEY="GROQ-API-KEY"
 from openpyxl import load_workbook
 import openai
 import os
@@ -8,7 +8,7 @@ from PIL import Image
 from io import BytesIO
 
 # Set your OpenAI API key
-openai.api_key = os.getenv("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")  # Set your API key as an environment variable
+openai.api_key = os.getenv("GROQ-API-KEY")  # Set your API key as an environment variable
 
 # Load the Excel file
 file_path = "Example Product.xlsx"
